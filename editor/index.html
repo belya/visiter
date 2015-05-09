@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="fabric/dist/fabric.min.js"></script>
+  <script src="jquery-2.1.3.min.js"></script>
+  <script src="jquery-ui/jquery-ui.min.js"></script>
+  <script>
+
+fabric.ContactText = fabric.util.createClass(fabric.Text, {
+  type: "contactText",
+  initialize: function(options) {
+    options || (options = {contact: 0});
+    this.callSuper('initialize', fabric.ContactText.contacts[options.contact], options);
+    this.set('contact', options.contact || '');
+  },
+  toObject: function() {
+    return fabric.util.object.extend(this.callSuper('toObject'), {
+      contact: this.get('contact')
+    });
+  },
+});
+
+fabric.ContactText.contacts = ["lol", "lolka"] //HERE will be data from server {{ contacts }}
+
+fabric.ContactText.fromObject = function(object) {
+  return new fabric.ContactText(object);
+}
+
+var canvas;
+window.onload = function() {
+  canvas = new fabric.Canvas('canvas');
+  initDragAndDrop();
+}
+
+function initDragAndDrop() {
+  $( "#textAdder" ).draggable({
+    revert: true, 
+  });
+  $( "#contactAdder" ).draggable({
+    revert: true, 
+  });
+  $( "#rectAdder" ).draggable({
+    revert: true, 
+  });
+  $( "#droppable" ).droppable({
+    drop: function(event, ui ) {
+      switch(ui.draggable.attr("id")) {
+        case "textAdder": 
+          addText();
+          break;
+        case "contactAdder": 
+          addContact();
+          break;
+        case "rectAdder": 
+          addRect();
+          break;
+      }
+    }
+  });
+}
+
+function removeElement() {
+  if(canvas.getActiveGroup()){
+    canvas.getActiveGroup().forEachObject(
+      function(object) {
+        canvas.remove(object)
+      });
+    canvas.discardActiveGroup().renderAll();
+  } 
+  else {
+    canvas.remove(canvas.getActiveObject());
+  }
+}
+
+function addText() {
+  var text = new fabric.IText(
+    'Sample text'
+  );
+  canvas.add(text);
+}
+
+function addContact() {
+  var text = new fabric.ContactText({contact: 1});
+  canvas.add(text);
+}
+
+function addRect() {
+  var rect = new fabric.Rect({
+    width : 50,
+    height : 50
+  });
+  canvas.add(rect);
+}
+
+function changeColor(selected) {
+  if(canvas.getActiveGroup()){
+    canvas.getActiveGroup().forEachObject(
+      function(object) {
+        object.fill = selected;
+      });
+  } 
+  else if (canvas.getActiveObject()) {
+    canvas.getActiveObject().fill = selected;
+  }
+  canvas.renderAll();
+}
+
+function sendAjax() {
+  /*$.ajax({
+    url: './',
+    data: JSON.stringify(canvas), 
+    dataType: "json",
+    success: function(){
+      alert('Saved successfully!');
+    }
+  });*/
+  var j = JSON.stringify(canvas.toJSON());
+  alert(j);
+  canvas.clear();
+  canvas.loadFromJSON(j, function() {
+    canvas.renderAll();
+  });
+} 
+
+    </script>
+</head>
+<body>
+    <div id="droppable"><canvas id="canvas" width="500" height="200" style="border: 1px solid gray; display:inline-block;"></canvas></div>
+    <div id="instruments">
+      <div id="textAdder" >Add text!</div>
+      <div id="contactAdder" >Add contact!</div>
+      <div id="rectAdder" >Add rect!</div>
+      <input type="submit" value="Remove" onclick="removeElement();">
+    </div>
+    <div id="properties">
+      <select id="color" onchange="changeColor($(this).val());">
+        <option value="black">Black</option>
+        <option value="red">Red</option>
+        <option value="blue">Blue</option>
+      </select>
+    </div>
+    <input type="submit" value="Save" onclick="sendAjax();">
+</body>
+</html>
